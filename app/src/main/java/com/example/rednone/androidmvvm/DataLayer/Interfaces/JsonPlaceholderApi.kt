@@ -16,16 +16,4 @@ interface JsonPlaceholderApi {
     fun getPosts(): Observable<List<PostModel>>
     @GET("/users")
     fun getUsers(): Observable<List<UserModel>>
-
-    companion object {
-        fun create(): JsonPlaceholderApi {
-            val retrofit = Retrofit.Builder()
-                    .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .baseUrl("https://jsonplaceholder.typicode.com")
-                    .build()
-
-            return retrofit.create(JsonPlaceholderApi::class.java)
-        }
-    }
 }
