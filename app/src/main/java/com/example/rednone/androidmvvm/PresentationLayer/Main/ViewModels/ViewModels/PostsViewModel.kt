@@ -3,16 +3,13 @@ package com.example.rednone.androidmvvm.PresentationLayer.Main.ViewModels.ViewMo
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
-import com.example.rednone.androidmvvm.DataLayer.Interfaces.JsonPlaceholderApi
-import com.example.rednone.androidmvvm.DataLayer.Managers.ApiManager
+import com.example.rednone.androidmvvm.DataLayer.Interfaces.ApiManager
 import com.example.rednone.androidmvvm.DataLayer.Models.LiveDataResult
 import com.example.rednone.androidmvvm.DataLayer.Models.PostModel
 import com.example.rednone.androidmvvm.PresentationLayer.Main.ViewModels.DI.ApiManagerModule
-import com.example.rednone.androidmvvm.PresentationLayer.Main.ViewModels.DI.AppComponent
 import com.example.rednone.androidmvvm.PresentationLayer.Main.ViewModels.DI.DaggerAppComponent
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
@@ -25,6 +22,7 @@ class PostsViewModel: ViewModel() {
     @Inject
     lateinit var apiManager: ApiManager
 
+    private var isSyncing = false
     private var postsData: MutableLiveData<LiveDataResult<List<PostModel>>> = MutableLiveData()
     private var posts: LiveDataResult<List<PostModel>>?= null
     private val compositeDisposable = CompositeDisposable()
@@ -37,24 +35,26 @@ class PostsViewModel: ViewModel() {
     fun getPosts(): LiveData<LiveDataResult<List<PostModel>>>? {
         if (posts != null && posts?.data?.isEmpty() != true) {
             postsData.value = posts
-        } else {
+        } else if(!isSyncing) {
             loadPosts()
         }
         return postsData
     }
 
     fun loadPosts() {
+        isSyncing = true
         val disposable = apiManager
-                .jsonPlaceholderApi
                 .getPosts()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(Consumer {
-                              posts =  LiveDataResult(it, null)
-                              postsData?.value = LiveDataResult(it, null) },
+                    isSyncing = false
+                    posts =  LiveDataResult(it, null)
+                    postsData?.value = LiveDataResult(it, null) },
                              Consumer {
-                                         posts =  LiveDataResult(null, it)
-                                         postsData?.value = LiveDataResult(null, it) })
+                                 isSyncing = false
+                                 posts =  LiveDataResult(null, it)
+                                 postsData?.value = LiveDataResult(null, it) })
         compositeDisposable.add(disposable)
     }
 

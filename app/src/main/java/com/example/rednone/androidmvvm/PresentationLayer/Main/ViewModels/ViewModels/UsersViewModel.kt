@@ -3,10 +3,8 @@ package com.example.rednone.androidmvvm.PresentationLayer.Main.ViewModels.ViewMo
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
-import com.example.rednone.androidmvvm.DataLayer.Interfaces.JsonPlaceholderApi
-import com.example.rednone.androidmvvm.DataLayer.Managers.ApiManager
+import com.example.rednone.androidmvvm.DataLayer.Interfaces.ApiManager
 import com.example.rednone.androidmvvm.DataLayer.Models.LiveDataResult
-import com.example.rednone.androidmvvm.DataLayer.Models.PostModel
 import com.example.rednone.androidmvvm.DataLayer.Models.UserModel
 import com.example.rednone.androidmvvm.PresentationLayer.Main.ViewModels.DI.ApiManagerModule
 import com.example.rednone.androidmvvm.PresentationLayer.Main.ViewModels.DI.DaggerAppComponent
@@ -24,6 +22,7 @@ class UsersViewModel: ViewModel() {
     @Inject
     lateinit var apiManager: ApiManager
 
+    private var isSyncing = false
     private var usersData: MutableLiveData<LiveDataResult<List<UserModel>>> = MutableLiveData()
     private var users: LiveDataResult<List<UserModel>>?= null
     private val compositeDisposable = CompositeDisposable()
@@ -36,23 +35,26 @@ class UsersViewModel: ViewModel() {
     fun getUsers(): LiveData<LiveDataResult<List<UserModel>>>? {
         if (users != null && users?.data?.isEmpty() != true) {
             usersData.value = users
-        } else {
+        } else if (!isSyncing){
             loadUsers()
         }
         return usersData
     }
 
     fun loadUsers() {
+        isSyncing = true
         val disposable = apiManager
-                .jsonPlaceholderApi
                 .getUsers()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(Consumer {
-                                      users =  LiveDataResult(it, null)
-                                         usersData?.value = LiveDataResult(it, null) },
-                           Consumer {  users =  LiveDataResult(null, it)
-                                         usersData?.value = LiveDataResult(null, it) })
+                    users =  LiveDataResult(it, null)
+                    usersData?.value = LiveDataResult(it, null)
+                    isSyncing = false },
+                        Consumer {
+                            users =  LiveDataResult(null, it)
+                            usersData?.value = LiveDataResult(null, it)
+                            isSyncing = false })
         compositeDisposable.add(disposable)
     }
 

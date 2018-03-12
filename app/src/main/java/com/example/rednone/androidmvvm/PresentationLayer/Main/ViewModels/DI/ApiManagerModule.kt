@@ -1,7 +1,8 @@
 package com.example.rednone.androidmvvm.PresentationLayer.Main.ViewModels.DI
 
 import android.support.annotation.NonNull
-import com.example.rednone.androidmvvm.DataLayer.Managers.ApiManager
+import com.example.rednone.androidmvvm.DataLayer.Interfaces.ApiManager
+import com.example.rednone.androidmvvm.DataLayer.Managers.ApiManagerImplementation
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -15,5 +16,5 @@ class ApiManagerModule {
     @Provides
     @NonNull
     @Singleton
-    fun provideApiManager(): ApiManager = ApiManager()
+    fun provideApiManager(): ApiManager = ApiManagerImplementation()
 }
